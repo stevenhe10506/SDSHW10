@@ -1,0 +1,109 @@
+---
+title: "HW10"
+author: "Steven He"
+date: "2024-04-22"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+EID: shh957
+
+```{r setup, include=FALSE, warning = FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(mosaic)
+library(stringr)
+library(kableExtra)
+library(MatchIt)
+library(moderndive)
+library(effectsize)
+options(scipen=999)
+```
+
+## Question 1 
+
+
+```{r,  fig.width=5,fig.height=3}
+redline <- read.csv("redlining.csv")
+m=lm(policies~minority, data = redline)
+get_regression_table(m, conf.level = .95)
+ggplot(redline, aes(x = minority, y = policies)) + geom_point() + geom_smooth(method = "lm")
+ggplot(redline, aes(x = fire, y = minority)) + geom_point() + geom_smooth(method = "lm" )
+ggplot(redline, aes(x = fire, y = policies)) + geom_point()+ geom_smooth(method = "lm" )
+ggplot(redline, aes(x = age, y = minority)) + geom_point()+ geom_smooth(method = "lm" )
+ggplot(redline, aes(x = age, y = policies)) + geom_point()+ geom_smooth(method = "lm" )
+ggplot(redline, aes(x = income, y = minority)) + geom_point()+ geom_smooth(method = "lm" )
+ggplot(redline, aes(x = income, y = policies)) + geom_point()+ geom_smooth(method = "lm" )
+
+m2 = lm(policies~minority + fire + age + income, data= redline)
+get_regression_table(m2, conf.level = .95)
+```
+
+The question we are trying to answer is if there is an association between the number of FAIR policies and the racial composition of a ZIP code. 
+
+The approach I used to answer the question is by first graphing modeling the relationship without adjusting for any confounders. I then used graphs to show that the possible confounders fire, age, and income were confounders since they effect both the effect and response variables. I then created a linear regression model adjusting for those confounders. 
+
+The results from the linear model was that the beta for the minority variable was .008, or for every percent increase in the percentage of minorities in a ZIP code, the model predicts the number of policies will increase by .008. We have a 95% confidence interval of .003 to .014 for the coefficient. Since the entire confidence interval is above zero, we can say there is an assocation between FAIR policies and the racial composition of a ZIP code. 
+
+
+
+## Problem 2
+
+### Part 1
+
+```{r pressure, echo=FALSE}
+groc <- read.csv("groceries.csv")
+avg <- groc %>%
+  group_by(Store) %>%
+  summarize(avgprice = mean(Price))
+ggplot(avg) + geom_col(aes(x = avgprice, y= reorder(Store, avgprice))) + labs(x = "Average Price", y = "Store")
+```
+
+In the bar plot we can see that Whole Foods has the highest average price of nearly 4 dollars and Fiesta has the lowest with nearly 2 dollars. The average price of products sold at all stores is `r mean(avg$avgprice)`. 
+
+### Part B
+```{r}
+ggplot(as.data.frame(table(groc$Product))) + geom_col(aes(x = Freq, y = reorder(Var1, Freq)))
+```
+
+The item that is in the most stores are Milk and eggs appearing in 16 stores, and the lowest frequency items are Lucky Charms, Frosted Flakes, El Milagros Chips, and Cinnanmon Toast Crunch at 4 stores. 
+
+### Part C
+```{r}
+groc$Type <- factor(groc$Type)
+groc$Type <- relevel(groc$Type, ref = "Grocery")
+m = lm(Price~Type + Product , data = groc)
+get_regression_table(m, conf.level = .95)
+```
+
+Compared with ordinary grocery stores, we are 95% confident that convenience stores charge somewhere between .41 and .92 dollars more for the same product. 
+
+### Part D 
+
+```{r}
+m2 = lm(Price~Store + Product , data = groc)
+get_regression_table(m2, conf.level = .95)
+```
+
+### Part E
+
+Using our fitted model, we can see that the model estimates the beta for Central Market is -.57 with a 95% confidence interval of -.99 to -.23, and the beta for HEB is -.646 with a 95% confidence interval of -.95 to -.35. This is other much the price the same product differs from our baseline, which is the store Albertsons. 
+
+Based on these coefficients, we can say that Central Market charges a similar amount to HEB for the same product. The difference between our two betas is .08, which is not very significant compared other differences in betas. For example, the difference between HEB and Target, both ordinary grocery stores, is around .3 dollars, or Central Market and Walmart which is a difference of other .6 dollars. 
+
+### Part F
+
+```{r}
+groc$Income10K <- groc$Income/10000
+m4 = lm(Price~Income10K + Product, data = groc)
+get_regression_table(m4, conf.level=.95)
+standardize_parameters(m4)
+```
+Based on the sign of the coefficient, which is negative, it seems that poorer ZIP codes pay more for the same product on average. However our confidence interval includes zero and we have a relatively large p-value, so we can't reject the null hypothesis and say there is an association between Income10K and price. 
+
+A one-standard-deviation increase in the income of a ZIP code seems to be associated with a -.03 standard deviation change in price that consumers in that ZIP code expect to pay for the same product. 
+
+
